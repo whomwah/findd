@@ -1,2 +1,2 @@
 all:
-	gcc findd.c -o findd
+	gcc findd.c -DVERSION=\"${VERSION}\" -o findd

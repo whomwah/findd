@@ -23,7 +23,6 @@ void emit_help(void);
 int main(int argc, char *argv[])
 {
     int ch;
-
     char **pathlist, **plp, *pof;
     FTS *filetree;
     FTSENT *filedat;
@@ -37,7 +36,7 @@ int main(int argc, char *argv[])
         err(1, "pledge failed");
 #endif
 
-    while ((ch = getopt(argc, argv, "h?0qrx")) != -1) {
+    while ((ch = getopt(argc, argv, "h0qrv")) != -1) {
         switch (ch) {
         case '0':
             Flag_Null = true;
@@ -48,21 +47,20 @@ int main(int argc, char *argv[])
         case 'r':
             Flag_Recurse = true;
             break;
-        case 'x':
-            fts_options |= FTS_XDEV;
+        case 'v':
+            printf("findd: %s\n", VERSION);
+            exit(ret);
             break;
         case 'h':
         case '?':
         default:
             emit_help();
-            /* NOTREACHED */
         }
     }
     argc -= optind;
     argv += optind;
 
     if (argc == 0 || **argv == '\0') {
-        warnx("need filename to search for");
         emit_help();
     }
 
@@ -116,9 +114,6 @@ int main(int argc, char *argv[])
                       strerror(filedat->fts_errno));
             break;
         case FTS_DC:
-            /* `ln . foo` is one way (thanks to my users) that a
-             * filesystem loop can be created. so it is handy to warn
-             * about these... */
             if (!Flag_Quiet)
                 warnx("filesystem cycle from '%s' to '%s'\n",
                       filedat->fts_accpath, filedat->fts_cycle->fts_accpath);
@@ -126,7 +121,7 @@ int main(int argc, char *argv[])
         case FTS_ERR:
             err(1, "fts_read failed??");
         default:
-            ;                   /* do nothing but silence warnings */
+            ;
         }
     }
     if (errno != 0)
@@ -137,6 +132,13 @@ int main(int argc, char *argv[])
 
 void emit_help(void)
 {
-    fputs("Usage: findd [-0] [-r] [-q] [-x] filename [dir ..]\n", stderr);
+    fputs("Usage: findd [-0] [-r] [-q] filename [dir ..]\n", stderr);
+    fputs("   [-q] Query string to search for e.g .git\n", stderr);
+    fputs("   [-r] Recursive (Much slower)\n", stderr);
+    fputs("   [-0] Join output into a single string\n", stderr);
+    fputs("\n", stderr);
+    fputs("Examples\n", stderr);
+    fputs("   findd -q .git $HOME\n", stderr);
+    fputs("   findd -q .git $HOME/foo $HOME/bar baz\n", stderr);
     exit(EX_USAGE);
 }
